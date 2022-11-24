@@ -4,7 +4,7 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate';
-var AWSXRay = require('aws-xray-sdk');
+const AWSXRay = require('aws-xray-sdk');
 
 const XAWS = AWSXRay.captureAWS(AWS)
 
@@ -51,37 +51,46 @@ export class TodosAccess {
     }
     
     async updateTodoItem(
-        todoId: string,
+        todoId: string, 
         userId: string,
         todoUpdate: TodoUpdate
-    ): Promise<TodoUpdate> {
-        logger.info('Update todo item function called')
-    
-        const result = await this.docClient
-        .update({
-            TableName: this.todosTable,
-            Key: {
-            todoId,
-            userId
-            },
-            UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done',
-            ExpressionAttributeValues: {
-            ':name': todoUpdate.name,
-            ':dueDate': todoUpdate.dueDate,
-            ':done': todoUpdate.done
-            },
-            ExpressionAttributeNames: {
-            '#name': 'name'
-            },
-            ReturnValues: 'ALL_NEW'
-        })
-        .promise()
-        const todoItemUpdate =result.Attributes
-        logger.info('Todo item updated', todoItemUpdate)
-        return todoItemUpdate as TodoUpdate
-    
-        return todoUpdate
-    }
+        ):Promise<TodoUpdate>{
+            logger.info('Update function called by User')
+
+            /**
+             * Create an update expression that adds todoUpdate poperties if they exist
+             */
+            const updateExpression = 'set ' + Object.keys(todoUpdate).map(key => `#${key} = :${key}`).join(', ')
+            const expressionAttributeNames = Object.keys(todoUpdate).reduce((acc, currkey) => {
+                acc[`#${currkey}`] = currkey
+                return acc;
+            }, {})
+            const expressionAttributeValues = Object.keys(todoUpdate).reduce((acc, currkey) => {
+                acc[`:${currkey}`] = todoUpdate[currkey]
+                return acc;
+            }, {})
+
+
+            const result = await this.docClient.update({
+                TableName: this.todosTable,
+                Key: {
+                    todoId,
+                    userId
+                },
+                UpdateExpression: updateExpression,
+                ExpressionAttributeNames: expressionAttributeNames,
+                ExpressionAttributeValues: expressionAttributeValues,
+                ReturnValues: 'ALL_NEW'
+            })
+            .promise()
+            
+
+            const updateTodoItem = result.Attributes
+            logger.info('Todo Item updated', updateTodoItem)
+            return updateTodoItem as TodoUpdate
+           
+
+    } 
     
     async deleteTodoItem(todoId: string, userId: string): Promise<string> {
         logger.info('Delete todo item function called')
@@ -99,26 +108,26 @@ export class TodosAccess {
         return todoId as string
     }
     
-    async updateTodoAttachmentUrl(
-        todoId: string,
-        userId: string,
-        attachmentUrl: string
-    ): Promise<void> {
-        logger.info('Update todo attachment url function called')
+    // async updateTodoAttachmentUrl(
+    //     todoId: string,
+    //     userId: string,
+    //     attachmentUrl: string
+    // ): Promise<void> {
+    //     logger.info('Update todo attachment url function called')
     
-        await this.docClient
-        .update({
-            TableName: this.todosTable,
-            Key: {
-            todoId,
-            userId
-            },
-            UpdateExpression: 'set attachmentUrl = :attachmentUrl',
-            ExpressionAttributeValues: {
-            ':attachmentUrl': attachmentUrl
-            }
-        })
-        .promise()
-    }
+    //     await this.docClient
+    //     .update({
+    //         TableName: this.todosTable,
+    //         Key: {
+    //         todoId,
+    //         userId
+    //         },
+    //         UpdateExpression: 'set attachmentUrl = :attachmentUrl',
+    //         ExpressionAttributeValues: {
+    //         ':attachmentUrl': attachmentUrl
+    //         }
+    //     })
+    //     .promise()
+    // }
 
 }

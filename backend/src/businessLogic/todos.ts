@@ -10,9 +10,9 @@ import { UpdateTodoRequest } from '../requests/UpdateTodoRequest';
 //import * as createError from 'http-errors'
 
 // TODO: Implement businessLogic
-const logger = createLogger('TodosAcess')
-const attachmentUtils = new AttachmentUtils()
-const todosAcess = new TodosAccess
+const logger = createLogger('TodosAcess');
+const attachmentUtils = new AttachmentUtils();
+const todosAcess = new TodosAccess()
 
 export async function getTodosForUser(userId: string): Promise<TodoItem[]> {
     logger.info('Get todos for user function called')
@@ -29,13 +29,13 @@ export async function createTodo(
 
     const todoId = uuid.v4()
     const createdAt = new Date().toISOString()
-    const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
+   // const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
     const newItem = {
         userId,
         todoId,
         createdAt,
         done: false,
-        s3AttachmentUrl: s3AttachmentUrl,
+        //s3AttachmentUrl: s3AttachmentUrl,
         ...newTodo
     }
 
